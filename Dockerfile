@@ -12,6 +12,6 @@ RUN apt update && apt install -y \
     && pip3 install flask flask-socketio eventlet
 
 WORKDIR /app
-COPY . /app
+COPY app.py .
 
 CMD ["python3", "app.py"]
