@@ -1,6 +1,6 @@
 # FluskRobotControl
 
-A lightweight Flask‐and‐SocketIO based web interface for streaming a ROS 2 camera feed and controlling a robot via a virtual joystick. FluskRobotControl bridges ROS 2 (Humble) and the browser, exposing:
+A lightweight Flask‐and‐SocketIO based web interface for streaming a ROS 2 camera feed and controlling a robot via a virtual joystick. FlaskRobotControl bridges ROS 2 (Humble) and the browser, exposing:
 
 - **Live MJPEG stream** of the `/image_raw` sensor topic  
 - **NippleJS‐powered on‑screen joystick** that publishes `geometry_msgs/Twist` messages to `/cmd_vel`  
@@ -37,5 +37,5 @@ A lightweight Flask‐and‐SocketIO based web interface for streaming a ROS 2
 
 1. **Clone the repository**  
    ```bash
-   git clone https://github.com/Merlin2LmmL/FluskRobotControl.git
-   cd FluskRobotControl
+   git clone https://github.com/Merlin2LmmL/FlaskRobotControl.git
+   cd FlaskRobotControl
