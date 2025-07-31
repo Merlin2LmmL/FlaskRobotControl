@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y \
     ros-humble-cv-bridge \
     python3-opencv \
     git \
-  && pip3 install --no-cache-dir flask flask-socketio eventlet opencv-python \
+  && pip3 install --no-cache-dir \
+       flask flask-socketio eventlet opencv-python \
+  && pip3 install --no-cache-dir "numpy<2" \
   && rm -rf /var/lib/apt/lists/*
 
 # Arbeitsverzeichnis für dein Flask-App
