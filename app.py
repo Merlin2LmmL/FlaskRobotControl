@@ -1,5 +1,4 @@
 import threading
-import socket
 import logging
 import sys
 
@@ -12,6 +11,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
+from studica_control.srv import SetData
 
 # Logging-Setup
 def setup_logging():
@@ -33,7 +33,7 @@ def get_local_ip():
         s.close()
     return ip
 
-# HTML-Template mit Joystick-UI (nippleJS)
+# HTML-Template mit Joystick-UI und Servo-Slider
 HTML = '''
 <!doctype html>
 <html lang="de">
@@ -45,12 +45,19 @@ HTML = '''
   <style>
     body, html { margin:0; padding:0; width:100%; height:100%; background:#000; }
     #stream { width:100%; height:auto; display:block; }
-    #joystick-container { position:absolute; bottom:20px; right:20px; width:300px; height:300px; } }
+    #joystick-container { position:absolute; bottom:20px; right:20px; width:300px; height:300px; }
   </style>
 </head>
 <body>
   <img id="stream" src="/video_feed" alt="Live Stream">
   <div id="joystick-container"></div>
+
+  <!-- Servo-Slider -->
+  <div style="position:absolute; bottom:20px; left:20px; background:white; padding:10px; border-radius:10px;">
+    <label for="servo-slider">Servo-Winkel: <span id="servo-value">0</span>°</label><br>
+    <input type="range" min="-150" max="150" value="0" id="servo-slider">
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
   <script>
     const socket = io();
@@ -62,19 +69,34 @@ HTML = '''
       size: 300
     };
     const joystick = nipplejs.create(options)[0];
+
     joystick.on('move', (evt, data) => {
       if (!data.angle || !data.distance) return;
       const angle = data.angle.radian;
       const dist = Math.min(data.distance, options.size / 2);
       const norm = dist / (options.size / 2);
-      const turn = Number((Math.cos(angle) * norm).toFixed(2)); // angular.z
-      const forward = Number((Math.sin(angle) * norm).toFixed(2)); // linear.x
-      socket.emit('cmd_vel', { x: turn, y: forward });
+
+      const linear = Number((Math.cos(angle) * norm).toFixed(2));
+      const angular = Number((-Math.sin(angle) * norm).toFixed(2));
+
+      socket.emit('cmd_vel', { x: angular, y: linear });
     });
+
     joystick.on('end', () => {
       socket.emit('cmd_vel', { x: 0, y: 0 });
     });
+
+    // Servo-Slider
+    const slider = document.getElementById('servo-slider');
+    const servoValue = document.getElementById('servo-value');
+
+    slider.addEventListener('input', () => {
+      const val = parseInt(slider.value);
+      servoValue.innerText = val;
+      socket.emit('servo_angle', { angle: val });
+    });
   </script>
+
 </body>
 </html>
 '''
@@ -107,9 +129,8 @@ class RosNode(Node):
     def __init__(self):
         super().__init__('ros_stream_joystick')
         self.bridge = CvBridge()
-        self.create_subscription(Image, '/image_raw', self.image_callback, 10)
-        qos = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.RELIABLE)
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', qos)
+        self.create_subscription(Image, '/image_raw', self.image_callback, QoSProfile(depth=10, reliability=QoSReliabilityPolicy.RELIABLE))
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', QoSProfile(depth=10, reliability=QoSReliabilityPolicy.RELIABLE))
         self.get_logger().info('ROS2 Node gestartet')
 
     def image_callback(self, msg: Image):
@@ -141,6 +162,7 @@ def video_feed():
             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# SocketIO-Handler für cmd_vel
 @socketio.on('cmd_vel')
 def handle_cmd(data):
     global node
@@ -154,6 +176,29 @@ def handle_cmd(data):
         node.publish_cmd(turn, forward)
     else:
         logging.warning('ROS-Node nicht initialisiert')
+
+# SocketIO-Handler für Servo-Angle (Service-Call direkt)
+@socketio.on('servo_angle')
+def handle_servo_angle(data):
+    global node
+    try:
+        angle = float(data.get('angle', 0.0))
+    except ValueError:
+        return
+
+    if not node:
+        logging.warning("ROS-Node nicht initialisiert")
+        return
+
+    client = node.create_client(SetData, '/servo1/set_servo_angle')
+    if not client.wait_for_service(timeout_sec=2.0):
+        logging.warning("Service '/servo1/set_servo_angle' nicht verfügbar")
+        return
+
+    req = SetData.Request()
+    req.params = str(angle)
+    future = client.call_async(req)
+    future.add_done_callback(lambda fut: node.get_logger().info(f"Servo angle set to {angle}"))
 
 # Einstiegspunkt
 def main():
