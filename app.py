@@ -23,7 +23,6 @@ def setup_logging():
 
 # Helper: lokale IP ermitteln
 def get_local_ip():
-    s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -31,8 +30,7 @@ def get_local_ip():
     except Exception:
         ip = "127.0.0.1"
     finally:
-        if s:
-            s.close()
+        s.close()
     return ip
 
 # HTML-Template mit Joystick-UI und Servo-Slider
@@ -218,7 +216,7 @@ def main():
     logging.info(msg)
 
     try:
-        socketio.run(app, host='0.0.0.0', port=port)
+        socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
     finally:
         node.destroy_node()
         rclpy.shutdown()
