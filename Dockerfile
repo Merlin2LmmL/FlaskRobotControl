@@ -1,34 +1,35 @@
-# Basis-Image mit ROS2 Humble
+# ─── Base: Official ROS2 Humble (Python 3.10, Ubuntu 22.04) ───
 FROM ros:humble
 
-# System- & ROS-Abhängigkeiten
-RUN apt-get update && apt-get install -y \
+# ─── System + ROS dependencies ───
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
-    python3-colcon-common-extensions \
+    python3-opencv \
     ros-humble-rclpy \
+    ros-humble-cv-bridge \
     ros-humble-sensor-msgs \
     ros-humble-geometry-msgs \
-    ros-humble-cv-bridge \
-    python3-opencv \
-    git \
-  && pip3 install --no-cache-dir \
-       flask flask-socketio eventlet opencv-python \
-  && pip3 install --no-cache-dir "numpy<2" \
-  && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Arbeitsverzeichnis für dein Flask-App
+# ─── Working directory ───
 WORKDIR /app
 
-# Deinen Flask-Code kopieren
-COPY app.py .
+# ─── Copy requirements and install Python packages ───
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# (Optional, falls Du pip aus requirements.txt bevorzugst)
-# RUN pip3 install --no-cache-dir -r requirements.txt
+# ─── Copy your Flask-ROS2 control app ───
+COPY app.py .
 
-# ENTRYPOINT sourct ROS und dein Overlay, dann startet die App
-ENTRYPOINT ["/bin/bash","-lc", "\
-    source /opt/ros/humble/setup.bash && \
-    source /ros2_ws/install/setup.bash && \
-    python3 /app/app.py \
+# ─── Environment setup ───
+ENV FLASK_ENV=production
+ENV PYTHONUNBUFFERED=1
+
+# ─── Expose web port ───
+EXPOSE 8000
+
+# ─── Start command ───
+ENTRYPOINT ["/bin/bash", "-lc", "\
+  source /opt/ros/humble/setup.bash && \
+  python3 /app/app.py \
 "]
