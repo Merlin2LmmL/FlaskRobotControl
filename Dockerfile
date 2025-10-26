@@ -2,7 +2,6 @@
 FROM ubuntu:22.04
 
 # ─── Arguments & environment ───
-# Default ROS 2 distro fallback: humble
 ARG ROS_DISTRO=humble
 ENV ROS_DISTRO=$ROS_DISTRO
 ENV DEBIAN_FRONTEND=noninteractive
@@ -34,12 +33,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ─── Set working directory ───
 WORKDIR /app
 
-# ─── Copy Python requirements & install them ───
-COPY FlaskRobotControl/requirements.txt .
+# ─── Copy Python requirements & install them first (for caching) ───
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ─── Copy the Flask + ROS2 app ───
-COPY FlaskRobotControl/ .
+# ─── Copy the rest of the project ───
+COPY . .
 
 # ─── Expose Flask port ───
 EXPOSE 8000
