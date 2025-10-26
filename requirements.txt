@@ -1,9 +1,5 @@
-cv2
-flask
-flask_socketio
-eventlet
-rclpy
-cv_bridge
-sensor_msgs
-geometry_msgs
-numpy
+Flask>=3.0,<4.0
+Flask-SocketIO>=5.3,<6.0
+eventlet>=0.33,<0.34
+opencv-python-headless>=4.10,<5.0
+numpy<2.0
