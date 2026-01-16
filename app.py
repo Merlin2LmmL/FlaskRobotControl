@@ -155,7 +155,7 @@ class RosNode(Node):
             if ret: frame_buffer.update(jpeg.tobytes())
         except Exception as e: self.get_logger().error(f'Image Error: {e}')
     def publish_cmd(self, x: float, y: float):
-        twist = Twist(); twist.linear.x = y*0.5; twist.angular.z = x*1.0; self.cmd_pub.publish(twist)
+        twist = Twist(); twist.linear.x = x*1; twist.angular.z = y*1.0; self.cmd_pub.publish(twist)
         self.get_logger().info(f'CmdVel sent: linear.x={twist.linear.x}, angular.z={twist.angular.z}')
 
 # Flask-Routen

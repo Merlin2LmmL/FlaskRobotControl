@@ -73,16 +73,16 @@ Environment variables or command-line flags:
 
      ```bash
      cd FlaskRobotControl/
-     docker build --build-arg ROS_DISTRO=${ROS_DISTRO} -t flask_robot_control . // Replace ros2 distro as needed
+     sudo docker build --build-arg ROS_DISTRO=${ROS_DISTRO} -t flask_robot_control .
      ```
 
  2. **Running Container (With Camera Support)**
 
     ```bash
-    docker run --rm -it   --net host   --device /dev/video0:/dev/video0   flask_robot_control
+    sudo docker run --rm -it --net host --device /dev/video0:/dev/video0 flask_robot_control
     ```
 
-3. Then open in browser the logged address (typically: `http://localhost:5000`).
+3. Then open in browser the logged address (typically: `http://localhost:8000`).
 
 ### Local (bare metal NOT RECOMMENDED)
 
